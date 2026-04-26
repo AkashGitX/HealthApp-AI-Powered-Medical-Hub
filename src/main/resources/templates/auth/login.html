@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Login — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="bg-light">
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
+    <div class="card shadow border-0 w-100" style="max-width:440px;">
+        <div class="card-body p-5">
+
+            <div class="text-center mb-4">
+                <i class="bi bi-heart-pulse-fill text-primary" style="font-size:3rem;"></i>
+                <h2 class="fw-bold mt-2">Welcome Back</h2>
+                <p class="text-muted">Sign in to your HealthApp account</p>
+            </div>
+
+            <!-- Error message -->
+            <div class="alert alert-danger d-none" id="loginError"></div>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="email" class="form-control" placeholder="you@example.com" required/>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" required/>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="loginBtn">
+                    Sign In
+                </button>
+            </form>
+
+            <hr class="my-4"/>
+            <p class="text-center text-muted mb-0">
+                Don't have an account?
+                <a th:href="@{/auth/register}" class="text-primary fw-semibold">Register here</a>
+            </p>
+            <p class="text-center mt-2">
+                <a th:href="@{/}" class="text-muted small"><i class="bi bi-arrow-left me-1"></i>Back to Home</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const errorDiv = document.getElementById('loginError');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+        errorDiv.classList.add('d-none');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('jwt_token', data.token);
+                localStorage.setItem('user_role', data.role);
+                localStorage.setItem('user_name', data.fullName);
+                window.location.href = data.redirectUrl;
+            } else {
+                errorDiv.textContent = data.message || 'Invalid credentials';
+                errorDiv.classList.remove('d-none');
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Connection error. Please try again.';
+            errorDiv.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Sign In';
+        }
+    });
+</script>
+</body>
+</html>

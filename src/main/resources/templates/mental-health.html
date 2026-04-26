@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Mental Health &amp; Manifestation — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        body { background: #f5f3ff; }
+
+        /* Hero */
+        .hero-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #a78bfa 100%);
+            padding: 4rem 0 3rem;
+            color: #fff;
+        }
+        .hero-badge {
+            background: rgba(255,255,255,.2);
+            border-radius: 20px;
+            padding: .3rem .85rem;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            display: inline-block;
+            margin-bottom: .75rem;
+        }
+
+        /* Section headers */
+        .section-tag {
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: .3rem .8rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: .5rem;
+        }
+        .tag-purple { background: #ede9fe; color: #6d28d9; }
+        .tag-green  { background: #d1fae5; color: #065f46; }
+        .tag-orange { background: #fff7ed; color: #c2410c; }
+
+        /* Content cards */
+        .content-card {
+            border: none;
+            border-radius: 16px;
+            padding: 1.5rem;
+            height: 100%;
+            transition: transform .2s, box-shadow .2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .content-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(109,40,217,.12); }
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+        .card-purple::before { background: linear-gradient(90deg,#7c3aed,#a78bfa); }
+        .card-green::before  { background: linear-gradient(90deg,#059669,#34d399); }
+        .card-orange::before { background: linear-gradient(90deg,#ea580c,#fb923c); }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        .icon-purple { background: #ede9fe; }
+        .icon-green  { background: #d1fae5; }
+        .icon-orange { background: #fff7ed; }
+
+        /* Tips */
+        .tip-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: .6rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .tip-item:last-child { border-bottom: none; }
+        .tip-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #7c3aed;
+            color: #fff;
+            font-size: .65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Free course CTA */
+        .cta-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-card::before {
+            content: '✨';
+            position: absolute;
+            font-size: 8rem;
+            opacity: .08;
+            right: -1rem;
+            top: -1rem;
+            line-height: 1;
+        }
+        .btn-cta {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            border: none;
+            padding: .85rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform .2s, box-shadow .2s;
+            box-shadow: 0 4px 20px rgba(239,68,68,.4);
+        }
+        .btn-cta:hover { transform: scale(1.05); box-shadow: 0 8px 28px rgba(239,68,68,.5); color: #fff; }
+
+        /* Quote strip */
+        .quote-strip {
+            background: #ede9fe;
+            border-left: 4px solid #7c3aed;
+            border-radius: 0 12px 12px 0;
+            padding: 1rem 1.5rem;
+            font-style: italic;
+            color: #4c1d95;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar shadow-sm" style="background: linear-gradient(90deg,#667eea,#764ba2);">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-white" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero-banner">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="hero-badge">🆓 Completely Free</span>
+                <h1 class="fw-bold mb-3" style="font-size:2.4rem; text-shadow:0 2px 12px rgba(0,0,0,.2);">
+                    Your Mental Health<br>&amp; Manifestation Journey
+                </h1>
+                <p class="lead mb-3 fst-italic" style="opacity:.9;">"If you can dream it, you can do it."</p>
+                <p class="mb-0" style="opacity:.85; max-width:540px;">
+                    Take care of your mind. Build positivity. Transform your life.
+                    Explore hand-picked documentaries, manifestation guides, and access
+                    a free certified course — all in one place.
+                </p>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <div style="font-size:6rem; line-height:1.1; filter:drop-shadow(0 4px 16px rgba(0,0,0,.25));">
+                    🧠<br><span style="font-size:4rem;">🌟</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<div class="container py-5" style="max-width:1060px;">
+
+    <!-- ══════════════ SECTION 1: MENTAL HEALTH RECOVERY ══════════════ -->
+    <div class="mb-2">
+        <span class="section-tag tag-purple"><i class="bi bi-heart-pulse me-1"></i>Section 1</span>
+    </div>
+    <h2 class="fw-bold mb-2">Mental Health Recovery Resources</h2>
+    <p class="text-muted mb-4">
+        Carefully selected documentaries and films that educate, inspire, and support your mental wellness journey.
+    </p>
+
+    <div class="row g-4 mb-5">
+
+        <div class="col-md-4">
+            <div class="content-card card-purple bg-white shadow-sm">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="card-icon icon-purple">🧠</div>
+                    <div>
+                        <span class="badge bg-purple-subtle text-purple mb-1" style="background:#ede9fe;color:#6d28d9;font-size:.7rem;">Netflix</span>
+                        <h5 class="fw-bold mb-1">The Mind Explained</h5>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    A compelling docuseries that breaks down anxiety, stress, mindfulness, and how your
+                    brain actually works — explained simply for everyday viewers.
+                </p>
+                <div class="quote-strip small">
+                    "Understanding your mind is the first step to healing it."
+                </div>
+                <div class="mt-3 d-flex gap-2 flex-wrap">
+                    <a href="https://www.netflix.com/title/81098586" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary rounded-pill">
+                        <i class="bi bi-play-circle me-1"></i>Watch on Netflix
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="content-card card-purple bg-white shadow-sm">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="card-icon icon-purple">💚</div>
+                    <div>
+                        <span class="badge mb-1" style="background:#ede9fe;color:#6d28d9;font-size:.7rem;">Documentary</span>
+                        <h5 class="fw-bold mb-1">Heal (2017)</h5>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    Explores the powerful mind-body connection and how emotional healing can
+                    transform physical health. Featuring leading scientists and spiritual teachers.
+                </p>
+                <div class="quote-strip small">
+                    "The body has a remarkable ability to heal itself when the mind is at peace."
+                </div>
+                <div class="mt-3 d-flex gap-2 flex-wrap">
+                    <a href="https://www.netflix.com/title/80191609" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary rounded-pill">
+                        <i class="bi bi-play-circle me-1"></i>Watch on Netflix
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="content-card card-purple bg-white shadow-sm">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="card-icon icon-purple">🎭</div>
+                    <div>
+                        <span class="badge mb-1" style="background:#ede9fe;color:#6d28d9;font-size:.7rem;">Netflix Documentary</span>
+                        <h5 class="fw-bold mb-1">Stutz (2022)</h5>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    Jonah Hill's intimate documentary with his therapist Phil Stutz, revealing
+                    practical tools and life-changing frameworks to overcome struggles and grow.
+                </p>
+                <div class="quote-strip small">
+                    "The tools work — but only if you do."
+                </div>
+                <div class="mt-3 d-flex gap-2 flex-wrap">
+                    <a href="https://www.netflix.com/title/81387962" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary rounded-pill">
+                        <i class="bi bi-play-circle me-1"></i>Watch on Netflix
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ SECTION 2: MANIFESTATION & MINDSET ══════════════ -->
+    <div class="mb-2">
+        <span class="section-tag tag-green"><i class="bi bi-stars me-1"></i>Section 2</span>
+    </div>
+    <h2 class="fw-bold mb-2">Manifestation &amp; Positive Thinking</h2>
+    <p class="text-muted mb-4">
+        Time-tested resources and daily practices to reprogram your mindset and attract what you want in life.
+    </p>
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-6">
+            <div class="content-card card-green bg-white shadow-sm">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="card-icon icon-green">🔮</div>
+                    <div>
+                        <span class="badge mb-1" style="background:#d1fae5;color:#065f46;font-size:.7rem;">Book / Documentary</span>
+                        <h5 class="fw-bold mb-1">The Secret</h5>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    The global phenomenon that introduced millions to the Law of Attraction.
+                    Learn how visualization, gratitude, and belief shape your reality.
+                </p>
+                <div class="quote-strip small" style="border-color:#059669; color:#065f46; background:#d1fae5;">
+                    "Ask, Believe, Receive — the law of attraction works for everyone."
+                </div>
+                <div class="mt-3">
+                    <a href="https://www.youtube.com/results?search_query=The+Secret+documentary" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-success rounded-pill">
+                        <i class="bi bi-youtube me-1"></i>Watch on YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="content-card card-green bg-white shadow-sm">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="card-icon icon-green">📖</div>
+                    <div>
+                        <span class="badge mb-1" style="background:#d1fae5;color:#065f46;font-size:.7rem;">Classic Book</span>
+                        <h5 class="fw-bold mb-1">Think and Grow Rich</h5>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    Napoleon Hill's timeless masterpiece on the power of belief, desire, and
+                    persistence. Discover the 13 principles that separate those who succeed from those who don't.
+                </p>
+                <div class="quote-strip small" style="border-color:#059669; color:#065f46; background:#d1fae5;">
+                    "Whatever the mind can conceive and believe, it can achieve."
+                </div>
+                <div class="mt-3">
+                    <a href="https://www.amazon.in/s?k=Think+and+Grow+Rich" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-success rounded-pill">
+                        <i class="bi bi-bag me-1"></i>Get the Book
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Manifestation Tips -->
+    <div class="card bg-white shadow-sm rounded-4 mb-5 border-0">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">
+                <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Daily Manifestation Tips
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="tip-item">
+                        <div class="tip-dot">1</div>
+                        <div>
+                            <strong>Visualize your goals daily</strong>
+                            <div class="text-muted small">Spend 5–10 minutes each morning picturing your ideal life in vivid detail.</div>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-dot">2</div>
+                        <div>
+                            <strong>Practice gratitude</strong>
+                            <div class="text-muted small">Write 3 things you're grateful for every evening to shift your energy positively.</div>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-dot">3</div>
+                        <div>
+                            <strong>Affirm your worth</strong>
+                            <div class="text-muted small">Repeat positive affirmations: "I am worthy. I am capable. I attract abundance."</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="tip-item">
+                        <div class="tip-dot">4</div>
+                        <div>
+                            <strong>Stay consistent</strong>
+                            <div class="text-muted small">Manifestation is a daily practice. Small consistent actions compound into big results.</div>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-dot">5</div>
+                        <div>
+                            <strong>Limit negative inputs</strong>
+                            <div class="text-muted small">Reduce news consumption and toxic social media. Protect your mental energy.</div>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-dot">6</div>
+                        <div>
+                            <strong>Meditate 10 minutes</strong>
+                            <div class="text-muted small">Even brief meditation rewires your brain for calm, focus, and resilience.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ SECTION 3: FREE COURSE ══════════════ -->
+    <div class="mb-2">
+        <span class="section-tag tag-orange"><i class="bi bi-mortarboard me-1"></i>Section 3</span>
+    </div>
+    <h2 class="fw-bold mb-4">Free Course for Mental Health &amp; Manifestation</h2>
+
+    <div class="cta-card shadow-lg mb-5">
+        <div class="position-relative">
+            <div style="font-size:3.5rem; margin-bottom:1rem;">🎓</div>
+            <h3 class="fw-bold mb-3" style="text-shadow:0 2px 8px rgba(0,0,0,.3);">
+                Start Your Journey Today — 100% Free
+            </h3>
+            <p class="mb-4" style="opacity:.88; max-width:560px; margin:0 auto 1.5rem;">
+                Begin your journey towards a better mindset and a more peaceful life.
+                This free course by Mitesh Khatri covers manifestation, NLP, and practical tools
+                to reprogram your mind for success and happiness.
+            </p>
+            <a href="https://www.miteshkhatri.com/#our-courses"
+               target="_blank" rel="noopener"
+               class="btn-cta">
+                <i class="bi bi-mortarboard-fill"></i>
+                Access Free Course
+            </a>
+            <div class="mt-4" style="opacity:.65; font-size:.82rem;">
+                <i class="bi bi-info-circle me-1"></i>
+                Opens on Mitesh Khatri's official website in a new tab — no registration required to browse.
+            </div>
+        </div>
+    </div>
+
+    <!-- Related HealthApp services nudge -->
+    <div class="card bg-white border-0 shadow-sm rounded-4 mb-2">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-heart-pulse-fill text-danger me-2"></i>Also on HealthApp</h6>
+            <div class="row g-3">
+                <div class="col-sm-6 col-md-3">
+                    <a href="/services/mental-health-test" class="text-decoration-none">
+                        <div class="text-center p-3 rounded-3 border h-100" style="transition:background .2s;" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background=''">
+                            <div style="font-size:2rem;">🧪</div>
+                            <div class="fw-semibold small mt-1">Mental Health Test</div>
+                            <div class="text-muted" style="font-size:.75rem;">Free self-assessment</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <a href="/services/eye-checkup" class="text-decoration-none">
+                        <div class="text-center p-3 rounded-3 border h-100" style="transition:background .2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+                            <div style="font-size:2rem;">👁️</div>
+                            <div class="fw-semibold small mt-1">Eye Test</div>
+                            <div class="text-muted" style="font-size:.75rem;">3 free vision tests</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <a href="/services/online-consultation" class="text-decoration-none">
+                        <div class="text-center p-3 rounded-3 border h-100" style="transition:background .2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+                            <div style="font-size:2rem;">💬</div>
+                            <div class="fw-semibold small mt-1">Talk to a Doctor</div>
+                            <div class="text-muted" style="font-size:.75rem;">Online consultation</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <a href="/services/medicine-finder" class="text-decoration-none">
+                        <div class="text-center p-3 rounded-3 border h-100" style="transition:background .2s;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background=''">
+                            <div style="font-size:2rem;">💊</div>
+                            <div class="fw-semibold small mt-1">Medicine Finder</div>
+                            <div class="text-muted" style="font-size:.75rem;">Generic alternatives</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-dark text-light py-4 mt-2">
+    <div class="container text-center">
+        <p class="mb-1">&copy; 2024 HealthApp — AI-Powered Healthcare Platform</p>
+        <small class="text-muted">Spring Boot 3 · Java 17 · JWT · Stripe · ZegoCloud</small>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

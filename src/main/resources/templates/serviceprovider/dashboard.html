@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Service Provider Dashboard — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white" id="navName">Loading...</span>
+            <button onclick="doLogout()" class="btn btn-danger btn-sm">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <div id="authError" class="alert alert-danger d-none">
+        <i class="bi bi-lock me-2"></i>Please <a href="/auth/login">log in</a> to view your dashboard.
+    </div>
+
+    <div id="dashContent" class="d-none">
+
+        <div id="noProfileBanner" class="alert alert-warning d-none">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Complete your shop profile to appear in listings.
+        </div>
+
+        <div class="row g-4">
+
+            <!-- Profile Form -->
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header fw-bold bg-white border-0 pt-3">
+                        <i class="bi bi-shop me-2 text-success"></i>Shop Profile
+                    </div>
+                    <div class="card-body">
+                        <form id="providerForm">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Shop Name *</label>
+                                <input type="text" id="shopName" class="form-control form-control-sm" placeholder="e.g. City Medical Store" required/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Address</label>
+                                <input type="text" id="address" class="form-control form-control-sm" placeholder="Street address"/>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">City *</label>
+                                    <input type="text" id="city" class="form-control form-control-sm" placeholder="City" required/>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">State</label>
+                                    <input type="text" id="state" class="form-control form-control-sm" placeholder="State"/>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">Phone</label>
+                                    <input type="tel" id="phone" class="form-control form-control-sm" placeholder="+91 XXXXXXXXXX"/>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">Pincode</label>
+                                    <input type="text" id="pincode" class="form-control form-control-sm" placeholder="400001"/>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Available Days</label>
+                                <input type="text" id="days" class="form-control form-control-sm" placeholder="Mon–Sat"/>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">Open Time</label>
+                                    <input type="time" id="openTime" class="form-control form-control-sm"/>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small fw-semibold">Close Time</label>
+                                    <input type="time" id="closeTime" class="form-control form-control-sm"/>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Available Doctors</label>
+                                <input type="text" id="availDoctors" class="form-control form-control-sm"
+                                       placeholder="Dr. Sharma (Cardiologist), Dr. Patel (General)"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Services Offered</label>
+                                <textarea id="services" class="form-control form-control-sm" rows="2"
+                                          placeholder="Blood tests, X-Ray, ECG, Pharmacy..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Pricing Info</label>
+                                <textarea id="pricing" class="form-control form-control-sm" rows="2"
+                                          placeholder="Blood test: ₹200, X-Ray: ₹500..."></textarea>
+                            </div>
+                            <div id="providerAlert"></div>
+                            <button type="submit" id="saveProvBtn" class="btn btn-success w-100">
+                                <i class="bi bi-save me-1"></i>Save Profile
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Listing Preview -->
+            <div class="col-lg-7">
+                <div class="card" id="listingCard">
+                    <div class="card-header fw-bold bg-white border-0 pt-3">
+                        <i class="bi bi-card-list me-2 text-success"></i>Current Listing
+                    </div>
+                    <div class="card-body" id="listingBody">
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-shop fs-1 d-block mb-3 opacity-40"></i>
+                            <p>Fill in your shop profile on the left to create your listing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+(async function init() {
+    const token = localStorage.getItem('jwt_token');
+    const role  = localStorage.getItem('user_role');
+    if (!token) {
+        document.getElementById('authError').classList.remove('d-none');
+        return;
+    }
+    // Roles stored as "USER", "DOCTOR", "SERVICE_PROVIDER"
+    if (role && role !== 'SERVICE_PROVIDER') {
+        window.location.href = role === 'USER' ? '/dashboard/user' : '/dashboard/doctor';
+        return;
+    }
+    const name = localStorage.getItem('user_name') || 'Provider';
+    document.getElementById('navName').textContent = name;
+    document.getElementById('dashContent').classList.remove('d-none');
+
+    // Load provider profile
+    const provJson = await apiFetchJson('/api/provider/my');
+    if (provJson?.success && provJson?.data) {
+        fillForm(provJson.data);
+        renderListing(provJson.data);
+    } else {
+        document.getElementById('noProfileBanner').classList.remove('d-none');
+    }
+})();
+
+function fillForm(d) {
+    document.getElementById('shopName').value     = d.shopName       || '';
+    document.getElementById('address').value      = d.address        || '';
+    document.getElementById('city').value         = d.city           || '';
+    document.getElementById('state').value        = d.state          || '';
+    document.getElementById('phone').value        = d.phone          || '';
+    document.getElementById('pincode').value      = d.pincode        || '';
+    document.getElementById('days').value         = d.availableDays  || '';
+    document.getElementById('openTime').value     = d.openTime       || '';
+    document.getElementById('closeTime').value    = d.closeTime      || '';
+    document.getElementById('availDoctors').value = d.availableDoctors|| '';
+    document.getElementById('services').value     = d.servicesOffered|| '';
+    document.getElementById('pricing').value      = d.pricingInfo    || '';
+}
+
+function renderListing(d) {
+    document.getElementById('listingBody').innerHTML = `
+        <h5 class="fw-bold">${e(d.shopName||'')}</h5>
+        <p class="text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>${e([d.address,d.city,d.state].filter(Boolean).join(', '))}</p>
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="p-2 bg-light rounded text-center">
+                    <i class="bi bi-clock text-success d-block mb-1"></i>
+                    <small class="fw-semibold">${e(d.availableDays||'Days not set')}</small><br/>
+                    <small class="text-muted">${e(d.openTime||'')} – ${e(d.closeTime||'')}</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-2 bg-light rounded text-center">
+                    <i class="bi bi-telephone text-success d-block mb-1"></i>
+                    <small class="fw-semibold">${e(d.phone||'No phone')}</small>
+                </div>
+            </div>
+        </div>
+        ${d.availableDoctors?`<div class="mb-3"><h6 class="fw-bold small text-uppercase text-muted">Available Doctors</h6><p>${e(d.availableDoctors)}</p></div>`:''}
+        ${d.servicesOffered?`<div class="mb-3"><h6 class="fw-bold small text-uppercase text-muted">Services</h6><p>${e(d.servicesOffered)}</p></div>`:''}
+        ${d.pricingInfo?`<div><h6 class="fw-bold small text-uppercase text-muted">Pricing</h6><p>${e(d.pricingInfo)}</p></div>`:''}
+        <span class="badge ${d.isActive?'bg-success':'bg-secondary'}">${d.isActive?'Active Listing':'Inactive'}</span>
+    `;
+}
+
+document.getElementById('providerForm').addEventListener('submit', async function(ev) {
+    ev.preventDefault();
+    setLoading('saveProvBtn', true, 'Saving...');
+    const payload = {
+        shopName:         document.getElementById('shopName').value,
+        address:          document.getElementById('address').value,
+        city:             document.getElementById('city').value,
+        state:            document.getElementById('state').value,
+        phone:            document.getElementById('phone').value,
+        pincode:          document.getElementById('pincode').value,
+        availableDays:    document.getElementById('days').value,
+        openTime:         document.getElementById('openTime').value,
+        closeTime:        document.getElementById('closeTime').value,
+        availableDoctors: document.getElementById('availDoctors').value,
+        servicesOffered:  document.getElementById('services').value,
+        pricingInfo:      document.getElementById('pricing').value
+    };
+    const res = await saveProviderProfile(payload);
+    setLoading('saveProvBtn', false);
+    if (res?.success) {
+        showAlert('providerAlert', 'Profile saved!', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } else {
+        showAlert('providerAlert', res?.message || 'Failed to save.', 'danger');
+    }
+});
+
+function e(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function doLogout() {
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_name');
+    window.location.href = '/';
+}
+</script>
+</body>
+</html>

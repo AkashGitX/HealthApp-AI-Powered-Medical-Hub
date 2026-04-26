@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Book Appointment — HealthApp</title>
+    <meta id="stripePk" th:content="${stripePublicKey}" content=""/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        #payment-element { min-height: 60px; }
+        .doctor-card.selected { border-color: #198754 !important; border-width: 2px !important; }
+        .doctor-card.selected .select-btn { background:#198754; color:#fff; border-color:#198754; }
+        .clinic-badge { background:#6c757d; color:#fff; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Home</a>
+            <a id="navDashBtn" href="/dashboard/user" class="btn btn-light btn-sm d-none">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <!-- Page header -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="bg-success bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-hospital-fill text-success fs-2"></i>
+        </div>
+        <div>
+            <h2 class="fw-bold mb-0">Book Clinic Appointment</h2>
+            <p class="text-muted mb-0">In-person clinic visit — pay now or at the clinic.</p>
+        </div>
+        <div class="ms-auto">
+            <a href="/services/online-consultation" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-camera-video me-1"></i>Need Video Consult instead?
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Doctor list (OFFLINE only) -->
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-secondary fs-6 px-3 py-2">
+                    <i class="bi bi-hospital-fill me-1"></i>Clinic Doctors
+                </span>
+                <span class="text-muted small">In-Person Visit Only</span>
+            </div>
+            <div id="doctorList">
+                <div class="text-center py-3 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Loading clinic doctors...
+                </div>
+            </div>
+        </div>
+
+        <!-- Right panel: form → payment → confirm -->
+        <div class="col-lg-5">
+            <div class="sticky-top" style="top:1rem;">
+
+                <!-- STEP 1: Booking form -->
+                <div id="stepBooking" class="card">
+                    <div class="card-header bg-success text-white fw-bold border-0">
+                        <i class="bi bi-calendar-plus me-2"></i>Appointment Details
+                    </div>
+                    <div class="card-body">
+                        <div id="selectedDoctorInfo" class="alert alert-light py-2 mb-3 d-none">
+                            <i class="bi bi-person-check me-1 text-success"></i>
+                            <span id="selDocText">No doctor selected</span>
+                        </div>
+
+                        <!-- Appointment type is always IN_PERSON for this page -->
+                        <div class="alert alert-secondary py-2 mb-3">
+                            <i class="bi bi-hospital-fill me-2"></i>
+                            <strong>In-Person Clinic Visit</strong>
+                            <small class="d-block text-muted mt-1">Visit the doctor at their clinic. No video call.</small>
+                        </div>
+                        <input type="hidden" id="aptType" value="IN_PERSON"/>
+
+                        <form id="bookingForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Appointment Date *</label>
+                                <input type="date" id="aptDate" class="form-control" required/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Preferred Time</label>
+                                <input type="time" id="aptTime" class="form-control"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reason for Visit</label>
+                                <textarea id="aptReason" class="form-control" rows="2"
+                                          placeholder="Describe your symptoms or reason..."></textarea>
+                            </div>
+
+                            <div class="card bg-light border-0 mb-3 p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold">Consultation Fee</span>
+                                    <span class="fw-bold text-success" id="feeDisplay">Select a doctor</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-muted small">
+                                    <i class="bi bi-shield-lock-fill text-success"></i>
+                                    Secured by Stripe — or pay at clinic
+                                </div>
+                            </div>
+
+                            <div id="bookingAlert"></div>
+
+                            <div class="d-grid">
+                                <button type="submit" id="bookBtn" class="btn btn-success btn-lg" disabled>
+                                    <i class="bi bi-calendar2-check me-2"></i>Confirm &amp; Proceed to Pay
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Stripe Payment -->
+                <div id="stepPayment" class="card d-none">
+                    <div class="card-header bg-primary text-white fw-bold border-0">
+                        <i class="bi bi-credit-card me-2"></i>Secure Payment
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info py-2 mb-3 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Appointment booked! Complete payment now or pay at the clinic.
+                        </div>
+                        <div class="mb-3 p-2 bg-light rounded text-center">
+                            <strong class="text-success" id="payFeeDisplay"></strong>
+                            <span class="text-muted small ms-1">to Dr. <span id="payDocName"></span></span>
+                        </div>
+                        <div id="payment-element" class="mb-3"></div>
+                        <div id="paymentAlert"></div>
+                        <div class="d-grid gap-2">
+                            <button id="payBtn" class="btn btn-primary btn-lg fw-semibold" onclick="doPayment()">
+                                <i class="bi bi-lock-fill me-2"></i>Pay Now
+                            </button>
+                            <button class="btn btn-link text-muted btn-sm" onclick="skipPayment()">
+                                Skip payment — I'll pay at the clinic
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Confirmation -->
+                <div id="stepConfirm" class="card d-none text-center">
+                    <div class="card-body py-4">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
+                        <h5 class="fw-bold mt-3">Appointment Confirmed!</h5>
+                        <p class="text-muted small" id="confirmText"></p>
+                        <div class="alert alert-secondary py-2 mb-3">
+                            <i class="bi bi-hospital-fill me-2"></i>
+                            This is an <strong>in-person clinic visit</strong>. Please arrive at the clinic on time.
+                        </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="/dashboard/user?booking=success" class="btn btn-success fw-semibold">
+                                <i class="bi bi-speedometer2 me-1"></i>View in Dashboard
+                            </a>
+                            <a href="/services/book-appointment" class="btn btn-outline-secondary btn-sm">
+                                Book Another
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+let selectedDoctor = null;
+let stripeInstance   = null;
+let stripeElements   = null;
+let bookedAppointmentId   = null;
+let bookedPaymentIntentId = null;
+
+// Navbar: show Dashboard button if logged in
+(function() {
+    const token = localStorage.getItem('jwt_token');
+    const role  = localStorage.getItem('user_role');
+    if (!token) return;
+    const btn = document.getElementById('navDashBtn');
+    if (btn) {
+        btn.href = role === 'DOCTOR' ? '/dashboard/doctor'
+                 : role === 'SERVICE_PROVIDER' ? '/dashboard/provider'
+                 : '/dashboard/user';
+        btn.classList.remove('d-none');
+    }
+})();
+
+// Set min date to today
+document.getElementById('aptDate').min = new Date().toISOString().split('T')[0];
+
+// Load OFFLINE/clinic doctors only
+(async function loadDoctors() {
+    const res  = await fetch('/api/doctor/offline');
+    const data = await res.json();
+    const doctors = data.data || data;
+    const list = document.getElementById('doctorList');
+
+    if (!doctors || !doctors.length) {
+        list.innerHTML = `<div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>No clinic doctors available at the moment.
+            <a href="/services/online-consultation" class="ms-2">Try Online Consultation →</a>
+        </div>`;
+        return;
+    }
+
+    list.innerHTML = doctors.map(doc => `
+        <div class="card mb-3 doctor-card border" data-id="${doc.id}"
+             data-name="${esc(doc.fullName)}" data-spec="${esc(doc.specialization)}"
+             data-fee="${doc.consultationFee || 0}"
+             onclick="selectDoctor(this)" style="cursor:pointer;">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:54px;height:54px;font-size:1.5rem;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-1">
+                        Dr. ${esc(doc.fullName)}
+                        <span class="badge bg-secondary ms-1"><i class="bi bi-hospital-fill me-1"></i>Clinic</span>
+                    </h6>
+                    <p class="text-secondary small mb-1 fw-semibold">${esc(doc.specialization)}</p>
+                    <p class="text-muted small mb-1">${esc(doc.hospital||'')}${doc.location?' · '+esc(doc.location):''}</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        ${doc.experienceYears ? `<span class="badge bg-light text-dark border"><i class="bi bi-award me-1"></i>${doc.experienceYears}y exp</span>` : ''}
+                        <span class="badge bg-success"><i class="bi bi-currency-rupee"></i>${doc.consultationFee || 'Free'}</span>
+                        <span class="badge bg-light text-success border"><i class="bi bi-geo-alt me-1"></i>In-Person</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-secondary btn-sm select-btn">Select</button>
+                </div>
+            </div>
+        </div>`).join('');
+})();
+
+function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function selectDoctor(card) {
+    document.querySelectorAll('.doctor-card').forEach(c => {
+        c.classList.remove('selected');
+        c.querySelector('.select-btn').textContent = 'Select';
+    });
+    card.classList.add('selected');
+    card.querySelector('.select-btn').textContent = 'Selected ✓';
+
+    selectedDoctor = {
+        id:   parseInt(card.dataset.id),
+        name: card.dataset.name,
+        spec: card.dataset.spec,
+        fee:  parseFloat(card.dataset.fee) || 0
+    };
+
+    document.getElementById('selectedDoctorInfo').classList.remove('d-none');
+    document.getElementById('selDocText').textContent = `Dr. ${selectedDoctor.name} — ${selectedDoctor.spec}`;
+    document.getElementById('feeDisplay').textContent = selectedDoctor.fee > 0 ? `₹${selectedDoctor.fee}` : 'Free';
+    document.getElementById('bookBtn').disabled = false;
+}
+
+// Step 1: Submit booking
+document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!selectedDoctor) {
+        showAlert('bookingAlert', 'Please select a doctor.', 'warning'); return;
+    }
+    if (!Auth.isLoggedIn()) {
+        showAlert('bookingAlert', 'Please <a href="/auth/login">login</a> to book.', 'warning'); return;
+    }
+
+    setLoading('bookBtn', true, 'Booking appointment...');
+
+    const payload = {
+        doctorId:        selectedDoctor.id,
+        appointmentDate: document.getElementById('aptDate').value,
+        appointmentTime: document.getElementById('aptTime').value || null,
+        type:            'IN_PERSON',
+        reason:          document.getElementById('aptReason').value
+    };
+
+    try {
+        const res = await apiFetch('/api/appointments', {
+            method: 'POST', body: JSON.stringify(payload)
+        });
+        const result = res ? await res.json() : null;
+
+        if (!result || !result.success) {
+            showAlert('bookingAlert', result?.message || 'Booking failed. Please try again.', 'danger');
+            setLoading('bookBtn', false);
+            return;
+        }
+
+        bookedAppointmentId = result.data.id;
+
+        // If free, skip payment
+        if (!selectedDoctor.fee || selectedDoctor.fee <= 0) {
+            showConfirmation(false);
+            return;
+        }
+
+        await showPaymentStep();
+
+    } catch (err) {
+        showAlert('bookingAlert', 'Unexpected error. Please try again.', 'danger');
+        setLoading('bookBtn', false);
+    }
+});
+
+// Step 2: Mount Stripe Payment Element
+async function showPaymentStep() {
+    const stripePk = document.getElementById('stripePk')?.content || '';
+
+    const piRes = await apiFetch('/api/payment/create-intent', {
+        method: 'POST',
+        body: JSON.stringify({
+            appointmentId: bookedAppointmentId,
+            amount: selectedDoctor.fee,
+            currency: 'inr'
+        })
+    });
+
+    let piData = null;
+    try { piData = piRes ? await piRes.json() : null; } catch(e) {}
+
+    if (!piData || piData.error || !piData.clientSecret) {
+        showConfirmation(false);
+        return;
+    }
+
+    bookedPaymentIntentId = piData.paymentIntentId;
+
+    document.getElementById('stepBooking').classList.add('d-none');
+    document.getElementById('stepPayment').classList.remove('d-none');
+    document.getElementById('payFeeDisplay').textContent = '₹' + selectedDoctor.fee;
+    document.getElementById('payDocName').textContent = selectedDoctor.name;
+
+    if (!stripePk) {
+        document.getElementById('payment-element').innerHTML =
+            '<div class="alert alert-warning small py-2"><i class="bi bi-info-circle me-1"></i>Stripe not configured. Click "Skip payment" to continue.</div>';
+        return;
+    }
+
+    try {
+        stripeInstance = Stripe(stripePk);
+        stripeElements = stripeInstance.elements({ clientSecret: piData.clientSecret });
+        const pe = stripeElements.create('payment', {
+            layout: 'tabs',
+            defaultValues: { billingDetails: { name: localStorage.getItem('user_name') || '' } }
+        });
+        pe.mount('#payment-element');
+    } catch (err) {
+        document.getElementById('payment-element').innerHTML =
+            '<div class="alert alert-warning small py-2">Could not load payment form. Use "Skip payment" to continue.</div>';
+    }
+}
+
+async function doPayment() {
+    if (!stripeInstance || !stripeElements) { skipPayment(); return; }
+    setLoading('payBtn', true, 'Processing payment...');
+    document.getElementById('paymentAlert').innerHTML = '';
+
+    try {
+        const { error, paymentIntent } = await stripeInstance.confirmPayment({
+            elements: stripeElements,
+            confirmParams: { return_url: window.location.origin + '/dashboard/user?booking=success' },
+            redirect: 'if_required'
+        });
+
+        if (error) {
+            showAlert('paymentAlert', error.message || 'Payment failed.', 'danger');
+            setLoading('payBtn', false);
+            return;
+        }
+
+        if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
+            try {
+                await apiFetch(`/api/payment/confirm?appointmentId=${bookedAppointmentId}&paymentIntentId=${paymentIntent.id}`, {
+                    method: 'POST'
+                });
+            } catch(e) {}
+            showConfirmation(true);
+        } else {
+            showAlert('paymentAlert', 'Payment was not completed. Please try again.', 'warning');
+            setLoading('payBtn', false);
+        }
+    } catch (err) {
+        showAlert('paymentAlert', 'Payment error. Please try again.', 'danger');
+        setLoading('payBtn', false);
+    }
+}
+
+function skipPayment() { showConfirmation(false); }
+
+function showConfirmation(paid) {
+    document.getElementById('stepBooking').classList.add('d-none');
+    document.getElementById('stepPayment').classList.add('d-none');
+    document.getElementById('stepConfirm').classList.remove('d-none');
+
+    const date = document.getElementById('aptDate').value;
+    document.getElementById('confirmText').textContent =
+        `In-person appointment with Dr. ${selectedDoctor.name} on ${date}.` +
+        (paid ? ' Payment received!' : ' Please pay at the clinic.');
+}
+</script>
+</body>
+</html>

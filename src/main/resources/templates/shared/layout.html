@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle != null ? pageTitle + ' | HealthApp' : 'HealthApp'}">HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" th:href="@{/}">
+            <i class="bi bi-heart-pulse-fill me-2"></i>HealthApp
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMain">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/services/eye-checkup}">Eye Checkup</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/services/mental-health-test}">Mental Health</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/services/report-analyzer}">Report Analyzer</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/services/medicine-finder}">Medicines</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/services/book-appointment}">Book Appointment</a></li>
+            </ul>
+            <div class="d-flex gap-2">
+                <div sec:authorize="!isAuthenticated()">
+                    <a class="btn btn-outline-light btn-sm" th:href="@{/auth/login}">Login</a>
+                    <a class="btn btn-light btn-sm ms-1" th:href="@{/auth/register}">Register</a>
+                </div>
+                <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-2">
+                    <div sec:authorize="hasRole('USER')">
+                        <a class="btn btn-outline-light btn-sm" th:href="@{/dashboard/user}">
+                            <i class="bi bi-person-circle me-1"></i>Dashboard
+                        </a>
+                    </div>
+                    <div sec:authorize="hasRole('DOCTOR')">
+                        <a class="btn btn-outline-light btn-sm" th:href="@{/dashboard/doctor}">
+                            <i class="bi bi-person-badge me-1"></i>Dashboard
+                        </a>
+                    </div>
+                    <div sec:authorize="hasRole('SERVICE_PROVIDER')">
+                        <a class="btn btn-outline-light btn-sm" th:href="@{/dashboard/provider}">
+                            <i class="bi bi-shop me-1"></i>Dashboard
+                        </a>
+                    </div>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-danger btn-sm">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main content -->
+<main>
+    <div th:replace="${content}"></div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+        <p class="mb-0">&copy; 2024 HealthApp — AI-Powered Healthcare Platform</p>
+        <small class="text-muted">Built with Spring Boot 3 · Java 17 · PostgreSQL</small>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Eye Test — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        body { background: #f0f4f8; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Test cards */
+        .test-card { cursor: pointer; border: 2px solid transparent; transition: all .2s; border-radius: 16px; }
+        .test-card:hover { border-color: #0d6efd; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(13,110,253,.15); }
+
+        /* Snellen */
+        .snellen-chart { background: #fff; border: 2px solid #dee2e6; border-radius: 12px; padding: 1.5rem; text-align: center; font-family: 'Courier New', monospace; font-weight: 700; letter-spacing: .15em; line-height: 1.7; }
+        .snellen-row { transition: background .2s; border-radius: 4px; padding: 0 8px; cursor: default; }
+        .snellen-row:hover { background: #e8f0fe; }
+        .snellen-row.selected { background: #cfe2ff; outline: 2px solid #0d6efd; }
+
+        /* Color test */
+        .plate-img { width: 280px; height: 280px; object-fit: cover; border-radius: 50%; border: 3px solid #dee2e6; display: block; margin: 0 auto; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+        .progress-pip { width: 10px; height: 10px; border-radius: 50%; background: #dee2e6; display: inline-block; margin: 0 2px; transition: background .2s; }
+        .progress-pip.done { background: #198754; }
+        .progress-pip.current { background: #0d6efd; }
+
+        /* Amsler */
+        #amslerCanvas { border: 2px solid #343a40; border-radius: 8px; cursor: crosshair; display: block; margin: 0 auto; background: #fff; }
+
+        /* Result badges */
+        .level-NORMAL { color: #198754; }
+        .level-MILD, .level-MILD { color: #fd7e14; }
+        .level-MODERATE, .level-WARNING, .level-DEFICIENT { color: #dc3545; }
+        .level-SEVERE, .level-URGENT { color: #842029; }
+
+        /* Summary cards */
+        .summary-card { border-left: 4px solid; border-radius: 8px; }
+        .summary-card.pass { border-color: #198754; background: #f0fff4; }
+        .summary-card.warn { border-color: #fd7e14; background: #fff8f0; }
+        .summary-card.fail { border-color: #dc3545; background: #fff5f5; }
+
+        /* Step indicator */
+        .step-indicator { display: flex; gap: 8px; align-items: center; margin-bottom: 1.5rem; }
+        .step-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+        .step-dot.done { background: #198754; color: #fff; }
+        .step-dot.active { background: #0d6efd; color: #fff; }
+        .step-dot.pending { background: #dee2e6; color: #6c757d; }
+        .step-line { flex: 1; height: 2px; background: #dee2e6; }
+        .step-line.done { background: #198754; }
+
+        .disclaimer { font-size: .78rem; color: #6c757d; border-top: 1px solid #dee2e6; padding-top: .75rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Home</a>
+            <a id="navDashBtn" href="#" class="btn btn-light btn-sm d-none">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:800px;">
+
+    <!-- ══════════════ STEP INDICATOR ══════════════ -->
+    <div class="step-indicator d-none" id="stepIndicator">
+        <div class="step-dot pending" id="dot1">1</div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-dot pending" id="dot2">2</div>
+        <div class="step-line" id="line2"></div>
+        <div class="step-dot pending" id="dot3">3</div>
+        <div class="step-line" id="line3"></div>
+        <div class="step-dot pending" id="dot4"><i class="bi bi-flag-fill" style="font-size:.7rem;"></i></div>
+    </div>
+
+    <!-- ══════════════ SECTION 0: SELECT TEST ══════════════ -->
+    <div class="section active" id="secSelect">
+        <h2 class="fw-bold mb-1"><i class="bi bi-eye-fill text-primary me-2"></i>Eye Test</h2>
+        <p class="text-muted mb-4">Three clinical-style tests to screen your vision. Complete all three for a full summary report.</p>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card test-card h-100 text-center p-4" onclick="startTest('visual')">
+                    <div class="mb-3"><span style="font-size:2.8rem;">👁️</span></div>
+                    <h5 class="fw-bold mb-1">Visual Acuity</h5>
+                    <p class="text-muted small mb-3">Snellen Chart test — measures how clearly you can see at a distance.</p>
+                    <span class="badge bg-primary-subtle text-primary">~2 minutes</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card test-card h-100 text-center p-4" onclick="startTest('color')">
+                    <div class="mb-3"><span style="font-size:2.8rem;">🎨</span></div>
+                    <h5 class="fw-bold mb-1">Color Blindness</h5>
+                    <p class="text-muted small mb-3">Ishihara plates — 12 images to detect red-green color deficiency.</p>
+                    <span class="badge bg-info-subtle text-info">12 questions</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card test-card h-100 text-center p-4" onclick="startTest('amsler')">
+                    <div class="mb-3"><span style="font-size:2.8rem;">🔲</span></div>
+                    <h5 class="fw-bold mb-1">Amsler Grid</h5>
+                    <p class="text-muted small mb-3">Grid test — detects distortion in central vision & macular issues.</p>
+                    <span class="badge bg-success-subtle text-success">~1 minute</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Show summary button if some tests done -->
+        <div id="partialSummaryBtn" class="mt-4 d-none">
+            <button class="btn btn-outline-primary w-100" onclick="showSection('secSummary')">
+                <i class="bi bi-clipboard2-check me-2"></i>View Results Summary
+            </button>
+        </div>
+
+        <p class="disclaimer text-center mt-4">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Disclaimer:</strong> This tool is for informational screening only and is not a medical diagnosis.
+            Always consult a qualified eye care professional for clinical evaluation.
+        </p>
+    </div>
+
+    <!-- ══════════════ SECTION 1: VISUAL ACUITY ══════════════ -->
+    <div class="section" id="secVisual">
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-3" onclick="showSection('secSelect')">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-eye text-primary me-2"></i>Visual Acuity Test</h4>
+                <p class="text-muted small mb-0">Snellen Chart</p>
+            </div>
+        </div>
+
+        <div class="alert alert-light border mb-3 py-2">
+            <i class="bi bi-info-circle text-primary me-2"></i>
+            <strong>Instructions:</strong> Cover one eye. Sit or stand <strong>6 feet (2 metres)</strong> from your screen.
+            Read the smallest line you can see clearly without squinting.
+        </div>
+
+        <!-- Snellen chart -->
+        <div class="snellen-chart mb-4" id="snellenChart">
+            <div class="snellen-row" style="font-size:4.5rem;" data-row="20/200">E</div>
+            <div class="snellen-row" style="font-size:3rem;" data-row="20/100">F P</div>
+            <div class="snellen-row" style="font-size:2.2rem;" data-row="20/70">T O Z</div>
+            <div class="snellen-row" style="font-size:1.6rem;" data-row="20/50">L P E D</div>
+            <div class="snellen-row" style="font-size:1.15rem;" data-row="20/30">P E C F D</div>
+            <div class="snellen-row" style="font-size:.85rem;" data-row="20/25">E D F C Z P</div>
+            <div class="snellen-row" style="font-size:.65rem;" data-row="20/20">F E L O P Z D</div>
+        </div>
+
+        <label class="form-label fw-semibold">Select the <em>smallest</em> row you could read clearly:</label>
+        <select id="snellenSelect" class="form-select mb-1">
+            <option value="">— Select a row —</option>
+            <option value="20/200">Row 1 — Very large (E)</option>
+            <option value="20/100">Row 2 — Large (F P)</option>
+            <option value="20/70">Row 3 — Medium-large (T O Z)</option>
+            <option value="20/50">Row 4 — Medium (L P E D)</option>
+            <option value="20/30">Row 5 — Small (P E C F D)</option>
+            <option value="20/25">Row 6 — Smaller (E D F C Z P)</option>
+            <option value="20/20">Row 7 — Smallest (F E L O P Z D)</option>
+        </select>
+        <small class="text-muted d-block mb-3">Click a row in the chart above to auto-select it.</small>
+
+        <button id="snellenSubmitBtn" class="btn btn-primary w-100" onclick="submitVisual()" disabled>
+            <i class="bi bi-check2-circle me-2"></i>Evaluate My Acuity
+        </button>
+
+        <div id="snellenResult" class="mt-3"></div>
+
+        <div id="snellenNextBtn" class="d-none mt-3">
+            <button class="btn btn-success w-100" onclick="startTest('color')">
+                <i class="bi bi-arrow-right me-2"></i>Next: Color Blindness Test
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════ SECTION 2: COLOR BLINDNESS ══════════════ -->
+    <div class="section" id="secColor">
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-3" onclick="showSection('secSelect')">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-palette text-info me-2"></i>Color Blindness Test</h4>
+                <p class="text-muted small mb-0">Ishihara Plates — 12 questions</p>
+            </div>
+        </div>
+
+        <div class="alert alert-light border mb-3 py-2">
+            <i class="bi bi-info-circle text-info me-2"></i>
+            <strong>Instructions:</strong> Look at each plate and type the number you see inside the circle.
+            If you cannot see any number, type <strong>0</strong>. Answer quickly and naturally.
+        </div>
+
+        <!-- Progress pips -->
+        <div class="text-center mb-3" id="colorPips"></div>
+        <div class="text-center mb-1 text-muted small" id="colorProgress">Question 1 of 12</div>
+
+        <!-- Plate image -->
+        <div class="text-center mb-3">
+            <img id="colorPlateImg" src="" alt="Ishihara plate" class="plate-img"/>
+        </div>
+
+        <!-- Answer input -->
+        <div class="d-flex gap-2 mb-2">
+            <input id="colorAnswer" type="text" class="form-control form-control-lg text-center fw-bold"
+                   placeholder="Enter number (or 0)" maxlength="3" inputmode="numeric"
+                   onkeydown="if(event.key==='Enter') nextPlate()"/>
+            <button class="btn btn-primary px-4" onclick="nextPlate()">
+                <span id="colorBtnLabel">Next <i class="bi bi-arrow-right"></i></span>
+            </button>
+        </div>
+        <div id="colorFeedback" class="small text-muted mb-2"></div>
+        <div id="colorResult" class="mt-3"></div>
+    </div>
+
+    <!-- ══════════════ SECTION 3: AMSLER GRID ══════════════ -->
+    <div class="section" id="secAmsler">
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-3" onclick="showSection('secSelect')">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-grid-3x3 text-success me-2"></i>Amsler Grid Test</h4>
+                <p class="text-muted small mb-0">Macular degeneration screening</p>
+            </div>
+        </div>
+
+        <div class="alert alert-light border mb-3 py-2">
+            <i class="bi bi-info-circle text-success me-2"></i>
+            <strong>Instructions:</strong> Cover one eye. Hold the screen at a comfortable reading distance (~30 cm).
+            Focus on the <span class="text-danger fw-bold">red dot</span> in the centre — do not move your eye off it.
+            Note whether any lines look wavy, blurry, or are missing.
+        </div>
+
+        <!-- Grid canvas -->
+        <canvas id="amslerCanvas" width="300" height="300" class="mb-2"></canvas>
+        <p class="text-center text-muted small mb-3">
+            <i class="bi bi-cursor-fill me-1"></i>Click on any area of the grid where lines look distorted.
+        </p>
+
+        <!-- Eye toggle -->
+        <div class="d-flex justify-content-center gap-3 mb-3">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="amslerEye" id="eyeLeft" value="left" checked onchange="resetAmsler()">
+                <label class="form-check-label" for="eyeLeft">Left eye</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="amslerEye" id="eyeRight" value="right" onchange="resetAmsler()">
+                <label class="form-check-label" for="eyeRight">Right eye</label>
+            </div>
+        </div>
+
+        <!-- Response buttons -->
+        <p class="fw-semibold mb-2">How do the grid lines appear?</p>
+        <div class="d-grid gap-2">
+            <button class="btn btn-outline-success amsler-opt" data-val="normal" onclick="selectAmsler(this)">
+                <i class="bi bi-check-circle me-2"></i>All lines straight and complete — everything looks normal
+            </button>
+            <button class="btn btn-outline-warning amsler-opt" data-val="slightly-wavy" onclick="selectAmsler(this)">
+                <i class="bi bi-exclamation-circle me-2"></i>Slightly wavy or blurry lines
+            </button>
+            <button class="btn btn-outline-danger amsler-opt" data-val="wavy" onclick="selectAmsler(this)">
+                <i class="bi bi-x-circle me-2"></i>Very wavy or blurry lines
+            </button>
+            <button class="btn btn-outline-danger amsler-opt text-danger" data-val="missing" onclick="selectAmsler(this)">
+                <i class="bi bi-exclamation-triangle me-2"></i>Missing areas / blank spots in the grid
+            </button>
+        </div>
+
+        <div id="amslerResult" class="mt-3"></div>
+
+        <div id="amslerNextBtn" class="d-none mt-3">
+            <button class="btn btn-success w-100" onclick="showSection('secSummary')">
+                <i class="bi bi-clipboard2-check me-2"></i>View Full Results Summary
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════ SECTION 4: SUMMARY ══════════════ -->
+    <div class="section" id="secSummary">
+        <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-3" onclick="showSection('secSelect')">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <h4 class="fw-bold mb-0"><i class="bi bi-clipboard2-check text-primary me-2"></i>Your Eye Test Results</h4>
+        </div>
+
+        <div id="summaryCards" class="mb-4"></div>
+
+        <div id="summaryRec" class="alert mb-3"></div>
+
+        <div class="alert alert-success d-none mb-3" id="saveNotice">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Results saved! View them in your <a href="/dashboard/user" class="alert-link">Dashboard → My Test Results</a>.
+        </div>
+
+        <div class="d-grid gap-2">
+            <button class="btn btn-primary" id="saveBtn" onclick="saveResults()">
+                <i class="bi bi-floppy me-2"></i>Save Results to My Account
+            </button>
+            <a href="/services/book-appointment" class="btn btn-outline-danger">
+                <i class="bi bi-calendar-plus me-2"></i>Book an Eye Specialist Appointment
+            </a>
+            <button class="btn btn-outline-secondary" onclick="showSection('secSelect')">
+                <i class="bi bi-arrow-repeat me-2"></i>Retake Tests
+            </button>
+        </div>
+
+        <p class="disclaimer text-center mt-4">
+            <i class="bi bi-shield-exclamation me-1"></i>
+            <strong>Disclaimer:</strong> These results are for informational purposes only and do not constitute a medical diagnosis.
+            Please consult a licensed ophthalmologist or optometrist for professional evaluation.
+        </p>
+    </div>
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+// ──────────────────────────────────────────────────────────────────
+// GLOBAL STATE
+// ──────────────────────────────────────────────────────────────────
+const results = { visual: null, color: null, amsler: null };
+
+// ──────────────────────────────────────────────────────────────────
+// NAV / SECTIONS
+// ──────────────────────────────────────────────────────────────────
+function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    const ind = document.getElementById('stepIndicator');
+    if (id === 'secSelect') {
+        ind.classList.add('d-none');
+    } else {
+        ind.classList.remove('d-none');
+        updateStepIndicator(id);
+    }
+
+    if (id === 'secSummary') buildSummary();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startTest(type) {
+    if (type === 'visual') showSection('secVisual');
+    else if (type === 'color') { initColorTest(); showSection('secColor'); }
+    else if (type === 'amsler') { initAmsler(); showSection('secAmsler'); }
+}
+
+function updateStepIndicator(section) {
+    const order = ['secVisual', 'secColor', 'secAmsler', 'secSummary'];
+    const idx = order.indexOf(section);
+    for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById('dot' + i);
+        if (i - 1 < idx)       { dot.className = 'step-dot done'; if (i < 4) document.getElementById('line' + i).className = 'step-line done'; }
+        else if (i - 1 === idx) { dot.className = 'step-dot active'; }
+        else                   { dot.className = 'step-dot pending'; }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// NAV DASH BUTTON
+// ──────────────────────────────────────────────────────────────────
+(function() {
+    const token = localStorage.getItem('jwt_token');
+    const role  = localStorage.getItem('user_role');
+    if (!token) return;
+    const btn = document.getElementById('navDashBtn');
+    btn.href = role === 'DOCTOR' ? '/dashboard/doctor'
+             : role === 'SERVICE_PROVIDER' ? '/dashboard/provider'
+             : '/dashboard/user';
+    btn.classList.remove('d-none');
+})();
+
+// ──────────────────────────────────────────────────────────────────
+// TEST 1 — VISUAL ACUITY
+// ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.snellen-row').forEach(row => {
+    row.addEventListener('click', function() {
+        document.querySelectorAll('.snellen-row').forEach(r => r.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('snellenSelect').value = this.dataset.row;
+        document.getElementById('snellenSubmitBtn').disabled = false;
+    });
+});
+
+document.getElementById('snellenSelect').addEventListener('change', function() {
+    const v = this.value;
+    document.getElementById('snellenSubmitBtn').disabled = !v;
+    if (v) {
+        document.querySelectorAll('.snellen-row').forEach(r => {
+            r.classList.toggle('selected', r.dataset.row === v);
+        });
+    }
+});
+
+async function submitVisual() {
+    const row = document.getElementById('snellenSelect').value;
+    if (!row) return;
+    try {
+        const res = await fetch('/api/eye-test/visual?acuityRow=' + encodeURIComponent(row), { method: 'POST' });
+        const data = await res.json();
+        const d = data.data;
+        results.visual = d;
+        const isGood = d.level === 'NORMAL';
+        const isMild = d.level === 'MILD';
+        document.getElementById('snellenResult').innerHTML = `
+            <div class="alert alert-${isGood ? 'success' : isMild ? 'warning' : 'danger'} mt-2">
+                <div class="fw-bold mb-1">${d.result}</div>
+                <div>${d.detail}</div>
+            </div>`;
+        document.getElementById('snellenNextBtn').classList.remove('d-none');
+        document.getElementById('partialSummaryBtn').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('snellenResult').innerHTML = '<div class="alert alert-danger">Error evaluating result. Please try again.</div>';
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// TEST 2 — COLOR BLINDNESS (12 plates)
+// ──────────────────────────────────────────────────────────────────
+const COLOR_PLATES = [
+    { img: '/images/color-test/plate-01.png' },
+    { img: '/images/color-test/plate-02.png' },
+    { img: '/images/color-test/plate-03.png' },
+    { img: '/images/color-test/plate-04.png' },
+    { img: '/images/color-test/plate-05.png' },
+    { img: '/images/color-test/plate-06.png' },
+    { img: '/images/color-test/plate-07.png' },
+    { img: '/images/color-test/plate-08.png' },
+    { img: '/images/color-test/plate-09.png' },
+    { img: '/images/color-test/plate-10.png' },
+    { img: '/images/color-test/plate-11.png' },
+    { img: '/images/color-test/plate-12.png' }
+];
+
+let colorIdx = 0;
+let colorAnswers = [];
+
+function initColorTest() {
+    colorIdx = 0;
+    colorAnswers = [];
+    renderPlate();
+}
+
+function buildPips() {
+    return COLOR_PLATES.map((_, i) => {
+        let cls = 'progress-pip';
+        if (i < colorIdx) cls += ' done';
+        else if (i === colorIdx) cls += ' current';
+        return `<span class="${cls}"></span>`;
+    }).join('');
+}
+
+function renderPlate() {
+    document.getElementById('colorPips').innerHTML = buildPips();
+    document.getElementById('colorProgress').textContent = `Question ${colorIdx + 1} of ${COLOR_PLATES.length}`;
+    document.getElementById('colorPlateImg').src = COLOR_PLATES[colorIdx].img;
+    document.getElementById('colorAnswer').value = '';
+    document.getElementById('colorAnswer').focus();
+    document.getElementById('colorFeedback').textContent = '';
+    document.getElementById('colorBtnLabel').innerHTML = colorIdx < COLOR_PLATES.length - 1
+        ? 'Next <i class="bi bi-arrow-right"></i>'
+        : 'Finish <i class="bi bi-check2"></i>';
+}
+
+async function nextPlate() {
+    const ans = document.getElementById('colorAnswer').value.trim();
+    if (!ans) {
+        document.getElementById('colorFeedback').innerHTML = '<span class="text-danger">Please enter a number (or 0 if you cannot see any).</span>';
+        return;
+    }
+    colorAnswers.push(ans);
+    colorIdx++;
+
+    if (colorIdx < COLOR_PLATES.length) {
+        renderPlate();
+    } else {
+        // All plates answered — submit
+        try {
+            const res = await fetch('/api/eye-test/color', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(colorAnswers)
+            });
+            const data = await res.json();
+            const d = data.data;
+            results.color = d;
+            const isGood = d.level === 'NORMAL';
+            const isMild = d.level === 'MILD';
+            document.getElementById('colorResult').innerHTML = `
+                <div class="alert alert-${isGood ? 'success' : isMild ? 'warning' : 'danger'}">
+                    <div class="fw-bold mb-1"><i class="bi bi-palette me-2"></i>${d.diagnosis}</div>
+                    <div class="mb-2">${d.detail}</div>
+                    <div class="small">Score: <strong>${d.score} / ${d.total}</strong> correct (${d.percentage}%)</div>
+                </div>
+                <button class="btn btn-success w-100 mt-2" onclick="startTest('amsler')">
+                    <i class="bi bi-arrow-right me-2"></i>Next: Amsler Grid Test
+                </button>`;
+            document.getElementById('colorPips').innerHTML = COLOR_PLATES.map(() =>
+                '<span class="progress-pip done"></span>').join('');
+            document.getElementById('colorProgress').textContent = 'Complete!';
+            document.getElementById('partialSummaryBtn').classList.remove('d-none');
+        } catch(e) {
+            document.getElementById('colorResult').innerHTML = '<div class="alert alert-danger">Error submitting answers. Please try again.</div>';
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// TEST 3 — AMSLER GRID
+// ──────────────────────────────────────────────────────────────────
+function initAmsler() {
+    document.getElementById('amslerResult').innerHTML = '';
+    document.getElementById('amslerNextBtn').classList.add('d-none');
+    document.querySelectorAll('.amsler-opt').forEach(b => {
+        b.className = b.className
+            .replace(/btn-(success|warning|danger)\b/g, 'btn-outline-$1')
+            .replace(/active/g, '').trim();
+    });
+    drawGrid();
+}
+
+function resetAmsler() { drawGrid(); }
+
+function drawGrid() {
+    const canvas = document.getElementById('amslerCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i <= 300; i += 15) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 300); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(300, i); ctx.stroke();
+    }
+    ctx.fillStyle = '#dc3545';
+    ctx.beginPath();
+    ctx.arc(150, 150, 5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+document.getElementById('amslerCanvas').addEventListener('click', function(e) {
+    const r = this.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    const ctx = this.getContext('2d');
+    ctx.fillStyle = 'rgba(220, 53, 69, 0.3)';
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.fill();
+});
+
+async function selectAmsler(btn) {
+    document.querySelectorAll('.amsler-opt').forEach(b => {
+        b.className = b.className
+            .replace(/\bbtn-(success|warning|danger)\b/g, 'btn-outline-$1')
+            .replace(/\bactive\b/g, '').trim();
+    });
+    btn.classList.add('active');
+    const val = btn.dataset.val;
+
+    try {
+        const res = await fetch('/api/eye-test/amsler?response=' + encodeURIComponent(val), { method: 'POST' });
+        const data = await res.json();
+        const d = data.data;
+        results.amsler = d;
+        const isGood = d.level === 'NORMAL';
+        const isMild = d.level === 'MILD';
+        document.getElementById('amslerResult').innerHTML = `
+            <div class="alert alert-${isGood ? 'success' : isMild ? 'warning' : 'danger'} mt-2">
+                <div class="fw-bold mb-1"><i class="bi bi-grid-3x3 me-2"></i>${d.result}</div>
+                <div>${d.detail}</div>
+            </div>`;
+        document.getElementById('amslerNextBtn').classList.remove('d-none');
+        document.getElementById('partialSummaryBtn').classList.remove('d-none');
+    } catch(e) {
+        document.getElementById('amslerResult').innerHTML = '<div class="alert alert-danger">Error. Please try again.</div>';
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// SUMMARY
+// ──────────────────────────────────────────────────────────────────
+function levelClass(level) {
+    if (!level) return 'pending';
+    if (level === 'NORMAL') return 'pass';
+    if (level === 'MILD') return 'warn';
+    return 'fail';
+}
+
+function levelIcon(level) {
+    if (!level) return '⏳';
+    if (level === 'NORMAL') return '✅';
+    if (level === 'MILD') return '⚠️';
+    return '🔴';
+}
+
+function buildSummary() {
+    const cards = [
+        {
+            label: 'Visual Acuity',
+            icon: '👁️',
+            data: results.visual,
+            name: 'result',
+            detail: 'detail',
+            pending: 'Not completed — click Visual Acuity Test to take it.'
+        },
+        {
+            label: 'Color Blindness',
+            icon: '🎨',
+            data: results.color,
+            name: 'diagnosis',
+            detail: 'detail',
+            score: true,
+            pending: 'Not completed — click Color Blindness Test to take it.'
+        },
+        {
+            label: 'Amsler Grid',
+            icon: '🔲',
+            data: results.amsler,
+            name: 'result',
+            detail: 'detail',
+            pending: 'Not completed — click Amsler Grid Test to take it.'
+        }
+    ];
+
+    let html = '';
+    let issues = 0;
+    let completed = 0;
+
+    cards.forEach(c => {
+        const d = c.data;
+        const cls = d ? levelClass(d.level) : 'pending';
+        const icon = d ? levelIcon(d.level) : '⏳';
+        if (d) { completed++; if (d.level !== 'NORMAL') issues++; }
+
+        html += `<div class="summary-card ${cls} card mb-3 p-3">
+            <div class="d-flex align-items-start gap-3">
+                <span style="font-size:1.8rem;">${c.icon}</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold">${c.label}</span>
+                        <span>${icon}</span>
+                    </div>
+                    ${d ? `
+                        <div class="fw-semibold text-dark mb-1">${d[c.name]}</div>
+                        <div class="text-muted small">${d[c.detail]}</div>
+                        ${c.score ? `<div class="small mt-1 text-muted">Score: <strong>${d.score}/${d.total}</strong> (${d.percentage}%)</div>` : ''}
+                    ` : `<div class="text-muted small fst-italic">${c.pending}</div>`}
+                </div>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById('summaryCards').innerHTML = html;
+
+    // Overall recommendation
+    const recEl = document.getElementById('summaryRec');
+    recEl.className = 'alert mb-3';
+    if (completed === 0) {
+        recEl.classList.add('alert-info');
+        recEl.innerHTML = '<i class="bi bi-info-circle me-2"></i>No tests completed yet. Take a test to see your results here.';
+    } else if (issues === 0) {
+        recEl.classList.add('alert-success');
+        recEl.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i><strong>All tests look great!</strong> Your eye health appears normal. Continue with annual eye checkups.';
+    } else if (issues === 1) {
+        recEl.classList.add('alert-warning');
+        recEl.innerHTML = '<i class="bi bi-exclamation-circle-fill me-2"></i><strong>One concern detected.</strong> We recommend visiting an eye specialist for a professional evaluation.';
+    } else {
+        recEl.classList.add('alert-danger');
+        recEl.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i><strong>Multiple concerns detected.</strong> Please consult an ophthalmologist promptly for a comprehensive eye examination.';
+    }
+
+    // Auto-save when all 3 tests are completed and user is logged in
+    if (completed === 3) {
+        trySaveResults(true);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// SAVE RESULTS
+// ──────────────────────────────────────────────────────────────────
+let resultsSaved = false;
+
+function buildSavePayload() {
+    const completed = Object.values(results).filter(Boolean);
+    if (!completed.length) return null;
+    const parts = [];
+    if (results.visual) parts.push('Acuity: ' + results.visual.result);
+    if (results.color)  parts.push('Color: '  + results.color.diagnosis + ' (' + results.color.score + '/' + results.color.total + ')');
+    if (results.amsler) parts.push('Amsler: ' + results.amsler.result);
+    const levels  = completed.map(r => r.level);
+    const riskMap = { NORMAL: 0, MILD: 1, MODERATE: 2, DEFICIENT: 2, WARNING: 2, SIGNIFICANT: 3, SEVERE: 4, URGENT: 4 };
+    const maxRisk = Math.max(...levels.map(l => riskMap[l] ?? 0));
+    const riskLevel = maxRisk === 0 ? 'LOW' : maxRisk <= 1 ? 'MEDIUM' : 'HIGH';
+    return { riskLevel, summary: parts.join(' | '), recommendation: 'Consult an eye specialist if any abnormalities noted.' };
+}
+
+async function trySaveResults(auto) {
+    if (resultsSaved) return;
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+        if (!auto) alert('Please log in to save your results to your account.');
+        return;
+    }
+    const payload = buildSavePayload();
+    if (!payload) { if (!auto) alert('No test results to save yet.'); return; }
+
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving…'; }
+
+    try {
+        const r = await fetch('/api/tests/eye-checkup?riskLevel=' + encodeURIComponent(payload.riskLevel) +
+            '&summary=' + encodeURIComponent(payload.summary) +
+            '&recommendation=' + encodeURIComponent(payload.recommendation), {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (r.ok) {
+            resultsSaved = true;
+            if (saveBtn) { saveBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Results Saved to Dashboard'; saveBtn.classList.replace('btn-primary','btn-success'); }
+            const notice = document.getElementById('saveNotice');
+            if (notice) { notice.classList.remove('d-none'); }
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch(e) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="bi bi-floppy me-2"></i>Save Results to My Account'; }
+        if (!auto) alert('Failed to save results. Please try again.');
+    }
+}
+
+async function saveResults() { await trySaveResults(false); }
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Mental Health Test — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-info shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Home</a>
+            <a id="navDashBtn" href="/dashboard/user" class="btn btn-light btn-sm d-none">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4" style="max-width:720px;">
+    <h2 class="fw-bold mb-1"><i class="bi bi-brain text-info me-2"></i>Mental Health Assessment</h2>
+    <p class="text-muted mb-4">10-question questionnaire. Answer honestly. <strong>No AI is used</strong> — scoring is purely static logic.</p>
+
+    <!-- Progress -->
+    <div class="d-flex justify-content-between small text-muted mb-1">
+        <span id="progressLabel">Question 1 of 10</span>
+        <span id="progressPct">0%</span>
+    </div>
+    <div class="mh-progress mb-4">
+        <div class="mh-progress-bar bg-info" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <!-- Questions container -->
+    <div id="questionnaire">
+        <div class="card mb-3 question-card" data-q="1">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">1. Over the past 2 weeks, how often have you felt little interest or pleasure in doing things?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q1" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q1" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q1" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q1" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="2">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">2. How often have you been feeling down, depressed, or hopeless?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q2" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q2" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q2" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q2" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="3">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">3. How often do you have trouble falling or staying asleep, or sleeping too much?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q3" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q3" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q3" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q3" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="4">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">4. How often have you felt tired or had little energy?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q4" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q4" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q4" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q4" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="5">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">5. Have you had poor appetite or have been overeating?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q5" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q5" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q5" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q5" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="6">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">6. Have you been feeling bad about yourself — like a failure or disappointing others?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q6" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q6" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q6" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q6" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="7">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">7. Have you had trouble concentrating on things like reading or watching TV?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q7" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q7" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q7" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q7" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="8">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">8. Do you frequently feel anxious, worried, or on edge?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q8" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q8" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q8" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q8" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="9">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">9. Have you felt unable to stop or control your worrying?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q9" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q9" value="3" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q9" value="7" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q9" value="10" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 question-card" data-q="10">
+            <div class="card-body">
+                <p class="fw-semibold mb-3">10. Have you had thoughts that you would be better off dead, or of hurting yourself?</p>
+                <div class="d-flex flex-column gap-2">
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q10" value="0" class="me-2"/>Not at all</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q10" value="10" class="me-2"/>Several days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q10" value="20" class="me-2"/>More than half the days</label>
+                    <label class="option-label p-3 border rounded cursor-pointer"><input type="radio" name="q10" value="30" class="me-2"/>Nearly every day</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-grid mb-4">
+        <button class="btn btn-info text-white btn-lg" id="submitBtn" onclick="submitTest()">
+            <i class="bi bi-send-check me-2"></i>Calculate My Score
+        </button>
+    </div>
+
+    <!-- Result card -->
+    <div id="resultCard" class="d-none">
+        <div class="card border-0 shadow">
+            <div class="card-body text-center py-5">
+                <div class="display-1 fw-bold mb-2" id="scoreDisplay">0</div>
+                <p class="text-muted mb-3">out of 100</p>
+                <div class="mh-progress mb-3" style="height:18px;">
+                    <div class="mh-progress-bar" id="resultBar" style="width:0%"></div>
+                </div>
+                <div class="alert fs-5 fw-bold" id="riskAlert"></div>
+                <p class="text-muted" id="summaryText"></p>
+                <p class="fst-italic small" id="recommendText"></p>
+                <div id="consultBtn" class="d-none mt-3">
+                    <a th:href="@{/services/book-appointment}"
+                       class="btn btn-danger btn-lg">
+                        <i class="bi bi-calendar-plus me-2"></i>Book Doctor Consultation
+                    </a>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-outline-secondary" onclick="resetTest()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Retake Test
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+(function() {
+    const token = localStorage.getItem('jwt_token');
+    const role  = localStorage.getItem('user_role');
+    if (!token) return;
+    const btn = document.getElementById('navDashBtn');
+    if (btn) {
+        btn.href = role === 'DOCTOR' ? '/dashboard/doctor'
+                 : role === 'SERVICE_PROVIDER' ? '/dashboard/provider'
+                 : '/dashboard/user';
+        btn.classList.remove('d-none');
+    }
+})();
+// Live progress tracking
+document.querySelectorAll('input[type=radio]').forEach(r => {
+    r.addEventListener('change', updateProgress);
+});
+
+function updateProgress() {
+    const answered = new Set();
+    document.querySelectorAll('input[type=radio]:checked').forEach(r => {
+        answered.add(r.name);
+    });
+    const pct = Math.round((answered.size / 10) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent  = pct + '%';
+    const cur = answered.size < 10 ? answered.size + 1 : 10;
+    document.getElementById('progressLabel').textContent = `Question ${cur} of 10`;
+}
+
+// Highlight selected option
+document.querySelectorAll('.option-label').forEach(lbl => {
+    lbl.addEventListener('click', function() {
+        const name = this.querySelector('input').name;
+        document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+            r.closest('.option-label').classList.remove('bg-info','bg-opacity-10','border-info');
+        });
+        this.classList.add('bg-info','bg-opacity-10','border-info');
+    });
+});
+
+async function submitTest() {
+    // ── STATIC SCORING — NO AI ──────────────────────
+    let total = 0;
+    let unanswered = [];
+    for (let i = 1; i <= 10; i++) {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        if (!sel) { unanswered.push(i); continue; }
+        total += parseInt(sel.value);
+    }
+    // Cap at 100
+    const score = Math.min(total, 100);
+
+    // Determine risk — pure static logic, no AI
+    let risk, riskClass, summary, recommendation;
+    if (score < 30) {
+        risk = 'LOW'; riskClass = 'success';
+        summary = `Your score is ${score}/100. You appear to be in good mental health.`;
+        recommendation = 'Keep up your healthy habits. Practice mindfulness and regular exercise.';
+    } else if (score <= 70) {
+        risk = 'MEDIUM'; riskClass = 'warning';
+        summary = `Your score is ${score}/100. You are experiencing moderate stress or anxiety.`;
+        recommendation = 'Consider speaking with a counselor. Practice stress-management techniques.';
+    } else {
+        risk = 'HIGH'; riskClass = 'danger';
+        summary = `Your score is ${score}/100. You are showing signs of significant mental health challenges.`;
+        recommendation = 'We strongly recommend consulting a mental health professional as soon as possible.';
+    }
+
+    // Show result UI
+    document.getElementById('questionnaire').classList.add('d-none');
+    document.getElementById('submitBtn').classList.add('d-none');
+    document.getElementById('resultCard').classList.remove('d-none');
+    document.getElementById('scoreDisplay').textContent = score;
+    document.getElementById('resultBar').style.width = score + '%';
+    document.getElementById('resultBar').className = `mh-progress-bar bg-${riskClass}`;
+    document.getElementById('riskAlert').className = `alert alert-${riskClass} fs-5 fw-bold`;
+    document.getElementById('riskAlert').textContent = risk + ' RISK';
+    document.getElementById('summaryText').textContent = summary;
+    document.getElementById('recommendText').textContent = recommendation;
+
+    if (risk !== 'LOW') {
+        document.getElementById('consultBtn').classList.remove('d-none');
+    }
+
+    // Save to backend if logged in
+    if (Auth.isLoggedIn()) {
+        try {
+            await submitMentalHealthScore(score);
+        } catch(e) { /* not critical */ }
+    }
+}
+
+function resetTest() {
+    document.getElementById('questionnaire').classList.remove('d-none');
+    document.getElementById('submitBtn').classList.remove('d-none');
+    document.getElementById('resultCard').classList.add('d-none');
+    document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false);
+    document.querySelectorAll('.option-label').forEach(l => l.classList.remove('bg-info','bg-opacity-10','border-info'));
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressPct').textContent = '0%';
+    document.getElementById('progressLabel').textContent = 'Question 1 of 10';
+}
+</script>
+<style>
+.option-label { cursor: pointer; transition: .15s; }
+.option-label:hover { background: #e8f4fd; border-color: #0dcaf0 !important; }
+</style>
+</body>
+</html>

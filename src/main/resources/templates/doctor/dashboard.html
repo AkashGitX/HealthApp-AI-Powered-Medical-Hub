@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Doctor Dashboard — HealthApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-heart-pulse-fill me-2"></i>HealthApp</a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white" id="navName">Loading...</span>
+            <button onclick="doLogout()" class="btn btn-danger btn-sm">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <div id="authError" class="alert alert-danger d-none">
+        <i class="bi bi-lock me-2"></i>Please <a href="/auth/login">log in</a> to view your dashboard.
+    </div>
+
+    <div id="dashContent" class="d-none">
+
+        <div id="noProfileBanner" class="alert alert-warning d-flex align-items-center gap-3 d-none">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            <div>You haven't set up your doctor profile yet. <strong>Fill in your details below.</strong></div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left: Profile -->
+            <div class="col-lg-4">
+                <div class="card mb-3">
+                    <div class="card-header fw-bold bg-white border-0 pt-3">
+                        <i class="bi bi-person-badge me-2 text-primary"></i>My Profile
+                    </div>
+                    <div class="card-body">
+                        <div id="profileInfo" class="text-center mb-3 d-none">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                                 style="width:72px;height:72px;font-size:2.2rem;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0" id="profileName">Dr. Name</h6>
+                            <p class="text-primary mb-1 small" id="profileSpec">Specialization</p>
+                            <div class="d-flex justify-content-center gap-2 mb-1">
+                                <span class="badge" id="doctorTypeBadge">Doctor</span>
+                                <span class="badge" id="availBadge">Available</span>
+                            </div>
+                            <div class="d-grid mt-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="toggleAvailabilityBtn(this)">
+                                    <i class="bi bi-toggle-on me-1"></i>Toggle Availability
+                                </button>
+                            </div>
+                        </div>
+
+                        <form id="profileForm">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Specialization *</label>
+                                <input type="text" id="spec" class="form-control form-control-sm" placeholder="e.g. Cardiologist" required/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Qualification</label>
+                                <input type="text" id="qual" class="form-control form-control-sm" placeholder="e.g. MBBS, MD"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Hospital</label>
+                                <input type="text" id="hosp" class="form-control form-control-sm" placeholder="Hospital name"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Location</label>
+                                <input type="text" id="loc" class="form-control form-control-sm" placeholder="City, State"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Consultation Fee (₹)</label>
+                                <input type="number" id="fee" class="form-control form-control-sm" placeholder="500"/>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Experience (years)</label>
+                                <input type="number" id="exp" class="form-control form-control-sm" placeholder="5"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Bio</label>
+                                <textarea id="bio" class="form-control form-control-sm" rows="2" placeholder="Brief description"></textarea>
+                            </div>
+                            <div id="profileAlert"></div>
+                            <button type="submit" id="saveProfileBtn" class="btn btn-primary w-100 btn-sm">
+                                <i class="bi bi-save me-1"></i>Save Profile
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Appointments -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header fw-bold bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-calendar-check me-2 text-primary"></i>Appointments</span>
+                        <span class="badge bg-primary" id="aptCount">0</span>
+                    </div>
+                    <div class="card-body" id="appointmentsBody">
+                        <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+    let doctorProfile = null;
+
+    (async function init() {
+        const token = localStorage.getItem('jwt_token');
+        const role  = localStorage.getItem('user_role');
+        if (!token) {
+            document.getElementById('authError').classList.remove('d-none');
+            return;
+        }
+        // Roles stored as "USER", "DOCTOR", "SERVICE_PROVIDER"
+        if (role && role !== 'DOCTOR') {
+            window.location.href = role === 'USER' ? '/dashboard/user' : '/dashboard/provider';
+            return;
+        }
+        const name = localStorage.getItem('user_name') || 'Doctor';
+        document.getElementById('navName').textContent = 'Dr. ' + name;
+        document.getElementById('dashContent').classList.remove('d-none');
+
+        // Load profile
+        const profJson = await apiFetchJson('/api/doctor/my-profile');
+        if (profJson?.success && profJson?.data) {
+            doctorProfile = profJson.data;
+            fillProfile(profJson.data);
+        } else {
+            document.getElementById('noProfileBanner').classList.remove('d-none');
+        }
+
+        // Load appointments
+        const aptJson = await apiFetchJson('/api/appointments/doctor');
+        const apts = aptJson?.data || [];
+        document.getElementById('aptCount').textContent = apts.length;
+        renderAppointments(apts);
+    })();
+
+    function fillProfile(d) {
+        document.getElementById('profileName').textContent = 'Dr. ' + (localStorage.getItem('user_name') || '');
+        document.getElementById('profileSpec').textContent = d.specialization || '';
+        const badge = document.getElementById('availBadge');
+        badge.textContent = d.isAvailable ? 'Available' : 'Unavailable';
+        badge.className   = 'badge ' + (d.isAvailable ? 'bg-success' : 'bg-secondary');
+        // Set doctor type badge
+        const typeBadge = document.getElementById('doctorTypeBadge');
+        if (d.doctorType === 'ONLINE') {
+            typeBadge.className = 'badge bg-primary';
+            typeBadge.innerHTML = '<i class="bi bi-camera-video-fill me-1"></i>Online Doctor';
+        } else {
+            typeBadge.className = 'badge bg-secondary';
+            typeBadge.innerHTML = '<i class="bi bi-hospital-fill me-1"></i>Clinic Doctor';
+        }
+        document.getElementById('profileInfo').classList.remove('d-none');
+
+        document.getElementById('spec').value = d.specialization || '';
+        document.getElementById('qual').value = d.qualification  || '';
+        document.getElementById('hosp').value = d.hospital       || '';
+        document.getElementById('loc').value  = d.location       || '';
+        document.getElementById('fee').value  = d.consultationFee|| '';
+        document.getElementById('exp').value  = d.experienceYears|| '';
+        document.getElementById('bio').value  = d.bio            || '';
+    }
+
+    function renderAppointments(apts) {
+        const el = document.getElementById('appointmentsBody');
+        if (!apts.length) {
+            el.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-40"></i>No appointments yet.</div>`;
+            return;
+        }
+        el.innerHTML = `<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+        <thead><tr><th>Patient</th><th>Date</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${apts.map(a => {
+            const isOnline = a.type === 'ONLINE';
+            const typeBadge = isOnline
+                ? `<span class="badge bg-primary"><i class="bi bi-camera-video-fill me-1"></i>Video</span>`
+                : `<span class="badge bg-secondary"><i class="bi bi-hospital-fill me-1"></i>Clinic</span>`;
+            const statusBadge = `<span class="badge ${a.status==='CONFIRMED'?'bg-success':a.status==='PENDING'?'bg-warning text-dark':a.status==='REJECTED'?'bg-danger':'bg-secondary'}">${e(a.status||'')}</span>`;
+            let actions = '';
+            if (a.status === 'PENDING') {
+                if (isOnline) {
+                    // Accept ONLINE → redirect to video call using only the DB-stored meetingRoomId
+                    if (!a.meetingRoomId) {
+                        // meetingRoomId absent — should never happen for ONLINE appointments
+                        actions = `<div class="d-flex gap-1 align-items-center">
+                            <span class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>No room ID</span>
+                            <button class="btn btn-danger btn-sm py-0" onclick="changeStatus(${a.id},'REJECTED',false)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>`;
+                    } else {
+                        const roomId = e(a.meetingRoomId);
+                        actions = `<div class="d-flex gap-1">
+                            <button class="btn btn-success btn-sm py-0" onclick="acceptOnline(${a.id},'${roomId}')">
+                                <i class="bi bi-check-lg me-1"></i>Accept &amp; Join
+                            </button>
+                            <button class="btn btn-danger btn-sm py-0" onclick="changeStatus(${a.id},'REJECTED',false)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>`;
+                    }
+                } else {
+                    // Accept OFFLINE → just confirm, no video
+                    actions = `<div class="d-flex gap-1">
+                        <button class="btn btn-success btn-sm py-0" onclick="changeStatus(${a.id},'CONFIRMED',false)"><i class="bi bi-check-lg"></i></button>
+                        <button class="btn btn-danger btn-sm py-0" onclick="changeStatus(${a.id},'REJECTED',false)"><i class="bi bi-x-lg"></i></button>
+                    </div>`;
+                }
+            } else if (a.status === 'CONFIRMED' && isOnline && a.meetingRoomId) {
+                actions = `<a href="/services/video-call?roomId=${e(a.meetingRoomId)}&role=doctor" class="btn btn-primary btn-sm py-0">
+                    <i class="bi bi-camera-video me-1"></i>Join Call
+                </a>`;
+            } else if (a.status === 'CONFIRMED' && !isOnline) {
+                actions = `<span class="badge bg-light text-secondary border"><i class="bi bi-geo-alt me-1"></i>Clinic Visit</span>`;
+            } else {
+                actions = '—';
+            }
+            return `<tr>
+                <td><strong>${e(a.userName||'')}</strong><br><small class="text-muted">${e(a.reason||'')}</small></td>
+                <td>${e(a.appointmentDate||'')}${a.appointmentTime?'<br><small class="text-muted">'+e(a.appointmentTime)+'</small>':''}</td>
+                <td>${typeBadge}</td>
+                <td>${statusBadge}</td>
+                <td>${actions}</td>
+            </tr>`;
+        }).join('')}</tbody>
+    </table></div>`;
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        setLoading('saveProfileBtn', true, 'Saving...');
+        const payload = {
+            specialization:  document.getElementById('spec').value,
+            qualification:   document.getElementById('qual').value,
+            hospital:        document.getElementById('hosp').value,
+            location:        document.getElementById('loc').value,
+            consultationFee: document.getElementById('fee').value || null,
+            experienceYears: document.getElementById('exp').value || null,
+            bio:             document.getElementById('bio').value
+        };
+        const res = await saveDoctorProfile(payload);
+        setLoading('saveProfileBtn', false);
+        if (res?.success) {
+            showAlert('profileAlert', 'Profile saved!', 'success');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            showAlert('profileAlert', res?.message || 'Failed to save.', 'danger');
+        }
+    });
+
+    async function toggleAvailabilityBtn(btn) {
+        btn.disabled = true;
+        const res = await toggleAvailability();
+        if (res?.success) location.reload(); else btn.disabled = false;
+    }
+
+    // Accept ONLINE appointment and redirect doctor to video room
+    async function acceptOnline(id, roomId) {
+        const res = await updateAppointmentStatus(id, 'CONFIRMED');
+        if (res?.success) {
+            window.location.href = `/services/video-call?roomId=${encodeURIComponent(roomId)}&role=doctor`;
+        } else {
+            alert('Failed to accept. Please try again.');
+        }
+    }
+
+    async function changeStatus(id, status) {
+        const res = await updateAppointmentStatus(id, status);
+        if (res?.success) location.reload(); else alert('Failed to update status.');
+    }
+
+    function e(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function doLogout() {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('user_name');
+        window.location.href = '/';
+    }
+</script>
+</body>
+</html>
